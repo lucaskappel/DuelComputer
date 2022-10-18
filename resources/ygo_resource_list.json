@@ -1,0 +1,100 @@
+{
+  "TCG Organized Play": {
+    "alias": "tcgop",
+    "type": "link",
+    "content": "https://www.yugioh-card.com/en/events/organizedplay/",
+    "help": "Documents regarding the technical aspects of organized play in the TCG, such as tournament policy, penalty guidelines, remote duel guidelines, etc."
+  },
+  "TCG Gameplay": {
+    "alias": "tcggp",
+    "type": "link",
+    "content": "https://www.yugioh-card.com/uk/gameplay/",
+    "help": "A collection of official resources on the gameplay of Yu-gi-Oh!, including the rulebook, fast effect timing chart, damage step table, etc."
+  },
+  "OCG Rulings Database Translation": {
+    "alias": "dbocg",
+    "type": "link",
+    "content": "https://db.ygorganization.com/",
+    "help": "A translation database and API of the OCG's Q&A/FAQ database, by Gallantron."
+  },
+  "UDE Rulings Archive": {
+    "alias": "dbude",
+    "type": "link",
+    "content": "https://web.archive.org/web/20090217182013/http://entertainment.upperdeck.com/yugioh/en/gameplay/faqs/cardfaqs/default.aspx?first=A&last=C",
+    "help": "UDE ruling database web archive. Use only for legacy rulings and formats."
+  },
+  "TCG Rulebook": {
+    "alias": "rulebook",
+    "type": "link",
+    "content": "https://www.yugioh-card.com/en/downloads/rulebook/SD_RuleBook_EN_10.pdf",
+    "help": "PDF download of the most recent rulebook published for the TCG (may contain minor errors)."
+  },
+  "TCG Forbidden/Limited List": {
+    "alias": "fll",
+    "type": "link",
+    "content": "https://www.yugioh-card.com/uk/limited/",
+    "help": "The current TCG Forbidden/Limited List."
+  },
+  "Battle Phase Table": {
+    "alias": "dstep",
+    "type": "link",
+    "content": "https://www.yugioh-card.com/en/gameplay/damage_step/",
+    "help": "Battle Phase / Damage Step table detailing the procession of attacks."
+  },
+  "Pazim's Resource Folder": {
+    "alias": "pazim",
+    "type": "link",
+    "content": "https://www.dropbox.com/sh/y4yemd7hpk99x6x/AABFPFPYQA-OuXBqs8HwNpM9a?preview=Judge+Resources.pdf",
+    "help": "An unofficial resource collection by Pazim. ATK/DEF modifiers, leaving the field, Prohibition & Psi Blocker."
+  },
+
+  "Fast Effect Timing Chart": {
+    "alias": "fetc",
+    "type": "image",
+    "content": "resources\\images\\fast_effect_timing_chart.png",
+    "help": "Chart which shows the flow of the game state."
+  },
+
+  "Sources of Credibility": {
+    "alias": "cred",
+    "type": "writeup",
+    "content": "When attempting to understand an interaction in YGO, these are the sources of authority:\n\n__AT AN EVENT YOU ARE PARTICIPATING IN__\n1. Head Judge - Their decision is final.\n2. Floor Judge - Their decision is correct, by definition, but may be appealed to the Head Judge.\n\n__ANYWHERE ELSE__\n1. An OCG database Q&A or FAQ entry.\n2. Official resources from KDE (FETC, Official blog articles, Rivalry & Gozen pdf, etc.)\n\n--------------------------------------\n\n**__POINTS OF NOTE__**\n- **ANY ANSWER** you receive that does not carry any authority as defined above carries zero weight as to what the \\\"correct\\\" answer is.\n- Events are **INDEPENDENT**. Any decision any judge makes at any given event carries __NO__ authority anywhere _except_ that event they are staffing.\n- At an event, the staff decisions are the __*only*__ source of authority. While other information and references may be used to offer insight into the \\\"correct\\\" outcome, the judges have the authority to overrule **anything** about the game, even if what they say is directly at odds with the database, the card text, or any of your previous knowledge.\n- **ANY** answer you recieve to a question outside an event, __***no matter who it is from***__, is, by definition, an estimated guess as to what you can expect to receive as an answer from a judge at any given future YGO event. The judges at any event have the full authority to disagree with and rule otherwise from **ANY** answer you get from **anywhere else**.\n\nThese policies are inherited from the overall principle of events:\n- The people running the event get to decide what the rules of the event are, even if those rules are at odds with what is thought to be \\\"correct\\\".\n- If you disagree with the way the event is run, you may bring it up to those who run the event, publicize your issue (respectfully), and/or choose to not support or attend the event in the future.",
+    "help": "How can you determine if an answer you receive for a ruling is valid?"
+  },
+  "TCG/OCG \"Summon\"": {
+    "alias": "summon",
+    "type": "writeup",
+    "content": "  ● The OCG has no equivalent of the TCG's \"Summon\"\n  ● e.g., OCG *Torrential Tribute* reads [TCG] \\\"a monster is Normal Summoned, Flip Summoned, or Special Summoned\\\"\n ● An [OCG] 召喚 (lit. \\\"Summon\\\") is a [TCG] Normal Summon, in face-up Attack Position unless card effects are involved.\n ● An [OCG] 通常召喚 (lit. \\\"Normal Summon\\\") is a [TCG] Normal Summon/Set, the thing you can manually do once per turn.\n> This particular gotcha has caused many many translation errors over the years. *Salamangreat Almiraj* and *Ido, Above*, and *Mausoleum of the Emperor* are examples of this.\n\n ● A [OCG] アドバンス召喚 (lit. \\\"Advance Summon\\\") is an [OCG] 通常召喚 that has used Tributes. In other words, it is a Normal Summon __OR__ Set which has used Tributes.\n  ● The TCG consistently localizes [OCG] アドバンス召喚 as [TCG] \\\"Tribute Summon\\\".\n> This is why [TCG] \\\"Tribute Summon\\\" consistently includes [TCG] \\\"Tribute Set\\\", but [TCG] \\\"Normal Summon\\\" does not include [TCG] \\\"Normal Set\\\".\n\n  ● Note that [TCG] Tribute Setting is still not a [TCG] \\\"Summon\\\", which would read [TCG] \\\"Normal Summon, Flip Summon, or Special Summon\\\" in the OCG.\n  ● If **Tribute Summon** is meant, in face-up Attack Position, the text will say as such. (see: True Draco monsters)",
+    "help": "What do the different 'Summon''s mean in the TCG and OCG?"
+  },
+  "Battle Replays": {
+    "alias": "replay",
+    "type": "writeup",
+    "content": "As far as replays go, a replay occurs if one of the following conditions is met:\n\n__**1. The possible attack targets change**__\n> *Assault Mode Activate* is activated on the attack declaration, Tributing *Stardust Dragon*, Summoning *Stardust Dragon /Assault Mode* from the Deck.\nBecause the available attack targets have changed, a replay occurs.\n\n__**2. The attacking monster is no longer able to perform the attack.**__\n> The opponent controls a *Maurauding Captain*  and another warrior monster, and you have a monster and an active *Skill Drain* which is negating the effects of *Maurauding Captain*.\n> You attack the warrior monster with your monster, and in response the opponent activates *Mystical Space Typhoon*, destroying *Skill Drain*.\nBecause *Maurauding Captain* is no longer negated, it now prevents attacking the warrior monster, and a replay occurs.\n\nNote that replays can only occur during the Battle Step. Once the Damage Step is entered, the attack is more-or-less \"locked in\".\n\nAnother possibly relevant note: A replay is *NOT* considered declaring an attack. For example, you cannot use *Mirror Force* in response to the attack of the new target if the attack is continued.",
+    "help": "When does a replay occur?"
+  },
+  "Special Summon Monsters and Proper Summoning": {
+    "alias": "ssm",
+    "type": "writeup",
+    "content": "> __**Special Summon Monsters**__ : Monsters which cannot be Normal Summoned or Set. This includes monsters which start the duel in the Extra Deck (ED) and monsters with explicit text such as *Destiny HERO - Plasma*.\n\n > __**Public Knowledge**__ - Information that is always available to both players, and if requested, the player is obligated to answer if they know the information. Areas of public knowledge include the GY, cards which are banished face-up, the face-up field, and the face-up Extra Deck.\n\nSpecial Summon Monsters (SSM) all have a summoning procedure through which they are properly summoned. For ED monsters this is typically Fusion/Synchro/XYZ/Link Summoning, but may also be a different, written procedure, such as in the case of *Ultimaya Tzolkien* or *Gladiator Beast Gyzarus*, in which case it looks something like:\n\n  ● Must (first) be Special Summoned by...\n  ● Must be _ Summoned, and cannot be summoned by other ways.\n  ● To Special Summon this card...\n  ● Must be Special Summoned by...\n\nMain deck SSM all have the latter, with the Summoning procedures written on them. These Summoning procedures can be ignored with cards such as *Lullaby of Obediance* and *Hyper Blaze*, which explicitly say they ignore Summoning conditions.\n\nWhat ***cannot*** be ignored is the *separate* mechanic of YGO which says that __**SSM cannot be improperly Summoned (Summoned via something other than their written procedure) from an area of public knowledge unless they have first been properly Summoned via their respective Summoning procedure.**__\n\n*Elementsaber Aina*'s parenthetical text is reminder text, and the effect would function identically if it were absent.",
+    "help": "What is a 'Special Summon Monster'? Why doesn't *Hyper Blaze* work on my Hamon in the GY?"
+  },
+  "Pendulum Monsters and the Face-Up Extra Deck": {
+    "alias": "pended",
+    "type": "writeup",
+    "content": "A Pendulum Monster Card is sent to the top of the face-up Extra Deck if it __would__ be sent:\n\n1. **FROM** the field\n2. **TO** the GY\n\nIf either of the above conditions are not fulfilled, the card goes wherever it normally would.",
+    "help": "When does a Pendulum Card go to the face-up Extra Deck?"
+  },
+  "Problem-Solving Card Text": {
+    "alias": "psct",
+    "type": "writeup",
+    "content": "Any effect whose text contains a **colon (__:__)** or **semicolon (__;__)** activates. These effects are formatted as:\n\n> Activation conditions __**:**__ Activation procedure __**;**__ effect.",
+    "help": "Does this effect activate? How can I tell what's a cost and what's an effect?"
+  },
+  "Damage Step Activation Legality": {
+    "alias": "dstepal",
+    "type": "writeup",
+    "content": "Generally, only effects that meet at least one of these criteria can be activated during the Damage Step:\n\n  ● Counter Trap card activations\n  ● Mandatory effects\n  ● Fast effects which directly modify ATK/DEF. (Only before reaching \"During Damage Calculation\")\n  ● Fast effects which negate effect activations\n  ● Trigger effects which activate in response to the activating card being moved (including battle position changes)\n  ● Effects whose activation condition is specific to the Damage Step (Ex: destruction by battle)\n\nAdditionally, effects' text may explicitly allow or disallow activation in the Damage Step.\nFurthermore, some old cards may have explicit rulings which allow or disallow activation in the Damage Step.\n\nAdditional information regarding the Battle Phase and Damage Step can be found at:\nhttps://www.yugioh-card.com/en/gameplay/damage_step/",
+    "help": "Am I allowed to activate this effect in the Damage Step?"
+  }
+}
