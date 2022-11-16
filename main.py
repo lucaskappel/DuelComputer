@@ -20,8 +20,10 @@ def load_config():
     if not os.path.exists('config.json'):  # If there is no config file
         with open(r"config.json", 'w', encoding='utf8') as config_file:  # Create one
             bot_config = {
-              "auth_token": "abcdefghijklmnopqrstuvwxyz.123456.7890-abcdefghijklmnopqrstuvwxyz1234567",
-              "command_prefix": "+"
+                "auth_token": "abcdefghijklmnopqrstuvwxyz.123456.7890-abcdefghijklmnopqrstuvwxyz1234567",
+                "command_prefix": "+",
+                "CHALLONGE_USERNAME": "none",
+                "CHALLONGE_TOKEN": "none",
             }
             json.dump(bot_config, config_file)  # Set the config to the above template
             sys.exit()  # User will need to edit the config file and set all the necessary info.
