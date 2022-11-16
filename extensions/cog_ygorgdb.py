@@ -128,7 +128,7 @@ class Cog_YGORGDB(commands.Cog):
     def __del__(self):
         # Write the cache to the json file.
         with open(r'resources/ygorgdb_cache.json', 'w', encoding='utf8') as cache_file:
-            json.dump(self.ygorgdb_cache, cache_file)
+            json.dump(self.ygorgdb_cache, cache_file, sort_keys=True, indent=4)
 
     async def cog_unload(self) -> None:
         # Unload the context menus
@@ -154,12 +154,12 @@ class Cog_YGORGDB(commands.Cog):
         if id_of_qa_posts_in_message is None:
             await interaction.followup.send("Could not locate the Q&A id(s).")
         else: # For each of the QAs found replace the card ids with the names:
-            embed_list = []
+            embed_list_qa = []
             for qa_id_string in id_of_qa_posts_in_message.groups():
 
                 # Create a new embed and add it to the list of embeds to display
                 qa_embed = discord.Embed()
-                embed_list.append(qa_embed)
+                embed_list_qa.append(qa_embed)
 
                 # Get the required data, loading from the cache if possible, saving to the cache if not.
                 qa_data = await self.get_qa_data(qa_id_string)
@@ -193,7 +193,7 @@ class Cog_YGORGDB(commands.Cog):
             # TODO: Add buttons to easily pull the relevant cards up
 
             # Send all the embeds!
-            await interaction.followup.send(embeds=embed_list)
+            await interaction.followup.send(embeds=embed_list_qa)
 
     #### #### Helper Methods #### ####
 
@@ -209,6 +209,11 @@ class Cog_YGORGDB(commands.Cog):
                     if request_response.status != 200:
                         print(f"Q&A retrieval failed: <{request_response.status}>\n{request_response.url}")
                         return
+
+                    # Check the revision header
+                    received_x_cache_revision = int(request_response.headers.get("X-Cache-Revision"))
+                    if received_x_cache_revision > self.ygorgdb_cache["X-Cache-Revision"]:
+                        await self.manifest_revision(received_x_cache_revision)
 
                     # If the request was successful, save the response json to the cache as an entry.
                     self.ygorgdb_cache['cache_qna'][qa_id] = await request_response.json()
@@ -228,6 +233,11 @@ class Cog_YGORGDB(commands.Cog):
                     if request_response.status != 200:
                         print(f"Card retrieval failed: <{request_response.status}>\n{request_response.url}")
                         return
+
+                    # Check the revision header
+                    received_x_cache_revision = int(request_response.headers.get("X-Cache-Revision"))
+                    if received_x_cache_revision > self.ygorgdb_cache["X-Cache-Revision"]:
+                        await self.manifest_revision(received_x_cache_revision)
 
                     # If the request was successful, save the response json to the cache as an entry.
                     self.ygorgdb_cache['cache_card'][card_id] = await request_response.json()
@@ -299,27 +309,32 @@ class Cog_YGORGDB(commands.Cog):
 
     #### #### Other Methods #### ####
 
-    async def manifest_revision_check(self, interaction: discord.Interaction): # TODO
-
-        # check the revision id, if it's the most recent one, don't need to do anything
-        #if ygorgdb_cache['X-Cache-Revision'] >= latest_manifest_revision: return
-
-        # But if it *is* different, we need to remove the outdated information.
+    async def manifest_revision(self, latest_x_cache_revision):
 
         # Get the json object of the changes.
-        #cache_changes = {}
         async with aiohttp.ClientSession() as client_session:
-            async with client_session.post(
-                    url=r"https://db.ygorganization.com/manifest/" + self.ygorgdb_cache['X-Cache-Revision']
+            async with client_session.get(
+                    url=r"https://db.ygorganization.com/manifest/" + str(self.ygorgdb_cache['X-Cache-Revision'])
             ) as request_response:
                 cache_changes = await request_response.json()
 
-        print(cache_changes)
+        print(f"Cache Changes:\n{cache_changes}")
 
-        # TODO remove old stuff
+        # Remove the old entries
+        change_counter = [0, 0]
+        for card_id in cache_changes["data"]["card"]:
+            if card_id in self.ygorgdb_cache["cache_card"]:
+                self.ygorgdb_cache["cache_card"].pop(card_id)
+                change_counter[0] += 1
+
+        for qa_id in cache_changes["data"]["qa"]:
+            if qa_id in self.ygorgdb_cache["cache_qna"]:
+                self.ygorgdb_cache["cache_qna"].pop(qa_id)
+                change_counter[1] += 1
 
         # Update the manifest revision and re-write the cache file.
-        #ygorgdb_cache['X-Cache-Revision'] = latest_manifest_revision
+        print(f"Invalidated {change_counter[0]} card entries and {change_counter[1]} QA entries.")
+        self.ygorgdb_cache['X-Cache-Revision'] = latest_x_cache_revision
         return
 
     #### #### #### ####
