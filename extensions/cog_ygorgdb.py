@@ -7,12 +7,6 @@ from discord import app_commands
 class Cog_YGORGDB(commands.Cog):
     """Resource cog handles commands involving writeups, links, and image resources """
 
-    ygorgdb_cache = { # Default cache file template
-        "X-Cache-Revision": 0,
-        "cache_qna": {},
-        "cache_card": {},
-    }
-
     enum_monster_properties = [
         None,
         {"en": "Creator God", "ja": "創造神族"},
@@ -101,6 +95,12 @@ class Cog_YGORGDB(commands.Cog):
         ':arrow_upper_left:',
         ':arrow_up:',
         ':arrow_upper_right:']
+
+    ygorgdb_cache = { # Default cache file template
+        "X-Cache-Revision": 0,
+        "cache_qna": {},
+        "cache_card": {},
+    }
 
     #### #### Structors #### ####
 
