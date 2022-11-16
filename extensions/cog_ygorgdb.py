@@ -2,6 +2,7 @@ import aiohttp, re, os, json
 import discord
 from discord.ext import commands
 from discord import app_commands
+from PIL import Image
 
 
 class Cog_YGORGDB(commands.Cog):
@@ -142,9 +143,10 @@ class Cog_YGORGDB(commands.Cog):
     @app_commands.command(name="card_display")
     @app_commands.describe(card_id='Card ID to query and display')
     async def test_card_display(self, interaction: discord.Interaction, card_id: str):
-        await interaction.response.send_message(embed=await self.build_card_embed(card_id))
+        #await interaction.response.send_message(embed=await self.build_card_embed(card_id))
+        await self.get_card_image(card_id)
 
-    #### #### App Commands #### ####
+    #### #### App Commands #### #### Make sure to add these to the constructor!
 
     async def read_qa_link(self, interaction: discord.Interaction, message: discord.Message) -> None:
         await interaction.response.defer(thinking=False) # This could take longer than 3s.
@@ -228,6 +230,7 @@ class Cog_YGORGDB(commands.Cog):
 
             # First open the api post request and get the information.
             async with aiohttp.ClientSession() as client_session:
+                print(client_session.headers)
                 async with client_session.get(
                         url=r"https://db.ygorganization.com/data/card/" + card_id) as request_response:
                     if request_response.status != 200:
@@ -245,12 +248,38 @@ class Cog_YGORGDB(commands.Cog):
         # After updating the cache, we can return the Q&A from the cache.
         return self.ygorgdb_cache['cache_card'][card_id]
 
+    async def get_card_image(self, card_id): # TODO
+        image_path = r'resources/image_cache/artwork_' + card_id + '_.png'
+
+        # Create the cache folder if necessary
+        if not os.path.exists(r"/resources/image_cache/"): os.makedirs(r"/resources/image_cache/")
+
+        # If the image isn't cached, then go get it! :D
+        if not os.path.exists(image_path):
+            headers = { # Not sure why this is needed but it seems to work if I do this :I
+                "Referer": r"https://www.db.yugioh-card.com/yugiohdb/card_search.action?ope=2&cid=" + card_id
+            }
+            async with aiohttp.ClientSession(headers=headers) as client_session:
+                async with client_session.get(
+                        url=r"https://www.db.yugioh-card.com/yugiohdb/get_image.action?type=2&cid=" +
+                            card_id +
+                            "&ciid=1&enc=YE26X-CDN4OxiqeD_ivNWQ") as request_response:
+                    image_streamreader = request_response.content
+
+                    with
+
+        return image_path
+
     async def build_card_embed(self, card_id):
         card_data = await self.get_card_data(card_id)
         card_data_local = card_data["cardData"]["en" if "en" in card_data['cardData'] else "ja"]
 
+        # TODO card art (electurmite) @ /yugiohdb/get_image.action?type=2&cid=13507&ciid=1&enc=YE26X-CDN4OxiqeD_ivNWQ
+
         # Build the embed
-        card_embed = discord.Embed(title=card_data_local["name"])
+        card_embed = discord.Embed(
+            title=card_data_local["name"],
+            url=r"https://db.ygorganization.com/card#" + card_id)
 
         if card_data_local["cardType"] != "monster":
             card_embed.description = f"{card_data_local['property']} {card_data_local['cardType']}".title()
@@ -280,7 +309,7 @@ class Cog_YGORGDB(commands.Cog):
                 card_embed.description += f" | ⬖Pendulum Scale: {card_data_local['pendulumScale']}"
 
             # Attribute
-            card_embed.description += f"\n{card_data_local['attribute']} - Attribute"
+            card_embed.description += f"\n{card_data_local['attribute'].upper()} - Attribute"
 
             # Properties
             property_string = list(map( # Map them from the property enum.
@@ -290,9 +319,8 @@ class Cog_YGORGDB(commands.Cog):
             card_embed.description += f"\n[{' / '.join(property_string)}]\n"
 
             # ATK/DEF
-            card_embed.description += f"[ ATK: {card_data_local['atk']}"
+            card_embed.description += f"ATK: {card_data_local['atk']}"
             if 'def' in card_data_local: card_embed.description += f"\tDEF: {card_data_local['def']}"
-            card_embed.description += " ]"
 
             # Pendulum Effect
             if 'pendulumEffectText' in card_data_local:
