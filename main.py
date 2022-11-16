@@ -50,8 +50,8 @@ def run_bot():
     async def on_message(message):
         if message.author.bot: return  # Bot should not respond to itself or other bots ;i
         if message.author.id == int(bot_config["owner_id"]) and 'sync command tree now' in message.content:
-            sync_result = await bot_client.tree.sync()
-            await message.channel.send(f"Command sync status: {sync_result}")
+            await bot_client.tree.sync()
+            await message.channel.send(f"Command sync status: Complete")
 
         # Greeting
         if re.compile(r"^(good (morning|day|afternoon|evening)|greetings|hello).{1,2}duel.?(bot|machine|comp)",
