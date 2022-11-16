@@ -139,8 +139,10 @@ class Cog_YGORGDB(commands.Cog):
 
     #### #### Slash Commands #### ####
 
-    async def test_card_display(self, interaction: discord.Interaction):
-        pass
+    @app_commands.command(name="card_display")
+    @app_commands.describe(card_id='Card ID to query and display')
+    async def test_card_display(self, interaction: discord.Interaction, card_id: str):
+        await interaction.response.send_message(embed=await self.build_card_embed(card_id))
 
     #### #### App Commands #### ####
 
@@ -235,7 +237,7 @@ class Cog_YGORGDB(commands.Cog):
 
     async def build_card_embed(self, card_id):
         card_data = await self.get_card_data(card_id)
-        card_data_local = card_data["en" if "en" in card_data else "ja"]
+        card_data_local = card_data["cardData"]["en" if "en" in card_data['cardData'] else "ja"]
 
         # Build the embed
         card_embed = discord.Embed(title=card_data_local["name"])
@@ -265,18 +267,22 @@ class Cog_YGORGDB(commands.Cog):
                 card_embed.description += ")"
 
             if "pendulumScale" in card_data_local:
-                card_embed.description += f"| ⬖Pendulum Scale: {card_data_local['pendulumScale']}"
+                card_embed.description += f" | ⬖Pendulum Scale: {card_data_local['pendulumScale']}"
+
+            # Attribute
+            card_embed.description += f"\n{card_data_local['attribute']} - Attribute"
 
             # Properties
             property_string = list(map( # Map them from the property enum.
-                lambda prop: self.enum_monster_properties[prop]["en" if "en" in card_data else "ja"],
+                lambda prop: self.enum_monster_properties[prop]["en" if "en" in card_data['cardData'] else "ja"],
                 card_data_local['properties']
             ))
             card_embed.description += f"\n[{' / '.join(property_string)}]\n"
 
             # ATK/DEF
-            card_embed.description += f"ATK: {card_data_local['atk']}"
-            if 'def' in card_data_local: card_embed.description += f"ATK: {card_data_local['def']}"
+            card_embed.description += f"[ ATK: {card_data_local['atk']}"
+            if 'def' in card_data_local: card_embed.description += f"\tDEF: {card_data_local['def']}"
+            card_embed.description += " ]"
 
             # Pendulum Effect
             if 'pendulumEffectText' in card_data_local:
