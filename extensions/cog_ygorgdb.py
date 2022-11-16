@@ -51,7 +51,8 @@ class Cog_YGORGDB(commands.Cog):
     #### #### #### ####
 
     #### #### #### ####
-
+    
+    @app_commands.context_menu(name="Read Database Q&A Link")
     async def read_qa_link(self, interaction: discord.Interaction, message: discord.Message) -> None:
         await interaction.response.defer(thinking=False) # This could take longer than 3s.
 
