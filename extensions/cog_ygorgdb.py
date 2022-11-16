@@ -116,10 +116,6 @@ class Cog_YGORGDB(commands.Cog):
         with open(r'resources/ygorgdb_cache.json', 'r', encoding='utf8') as cache_file:
             self.ygorgdb_cache = json.load(cache_file)
 
-        # Load the localiation metadata
-        with open(r'resources/ygorgdb_localization_metadata.json', 'r', encoding='utf8') as metadata_file:
-            self.ygorgdb_localization_metadata = json.load(metadata_file)
-
         # Load the context menus
         self.context_menu_list = [
             app_commands.ContextMenu(
