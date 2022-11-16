@@ -3,6 +3,10 @@ This is a discord bot designed for the purpose of aiding in content regarding Yu
 
 For an invite link, please message Bard#3883 on Discord.
 
+Run once, this will generate your config and cache json files.
+
+Set the bot token to your bot, and set the owner to your discord id. Run the bot again, and then send the message "sync command tree now" on your server. It should print a response message letting you know the sync is complete.
+
 Currently its primary purpose is to serve as a tool to quickly reference write-ups and resource about various topics.
 
 Links:
