@@ -21,6 +21,7 @@ def load_config():
         with open(r"config.json", 'w', encoding='utf8') as config_file:  # Create one
             bot_config = {
                 "auth_token": "abcdefghijklmnopqrstuvwxyz.123456.7890-abcdefghijklmnopqrstuvwxyz1234567",
+                "owner_id": "183033825108951041",
                 "command_prefix": "+",
                 "CHALLONGE_USERNAME": "none",
                 "CHALLONGE_TOKEN": "none",
@@ -48,7 +49,7 @@ def run_bot():
     @bot_client.event # Sync command string, and insult handling
     async def on_message(message):
         if message.author.bot: return  # Bot should not respond to itself or other bots ;i
-        if message.author.id == 183033825108951041 and 'sync command tree now' in message.content:
+        if message.author.id == int(bot_config["owner_id"]) and 'sync command tree now' in message.content:
             sync_result = await bot_client.tree.sync()
             await message.channel.send(f"Command sync status: {sync_result}")
 
