@@ -180,7 +180,7 @@ class Cog_YGORGDB(commands.Cog):
                             )
 
                 # Now construct the embed!
-                qa_embed.title = qa_data['qaData'][locale]['title'][:255]
+                #qa_embed.title = qa_data['qaData'][locale]['title'][:255]
                 qa_embed.add_field(
                     name='Question',
                     value=qa_data['qaData'][locale]['question']
