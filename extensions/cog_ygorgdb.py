@@ -2,7 +2,7 @@ import aiohttp, re, os, json
 import discord
 from discord.ext import commands
 from discord import app_commands
-from PIL import Image
+#from PIL import Image
 
 
 class Cog_YGORGDB(commands.Cog):
@@ -266,7 +266,7 @@ class Cog_YGORGDB(commands.Cog):
                             "&ciid=1&enc=YE26X-CDN4OxiqeD_ivNWQ") as request_response:
                     image_streamreader = request_response.content
 
-                    with
+                    #with
 
         return image_path
 
