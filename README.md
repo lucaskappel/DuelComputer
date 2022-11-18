@@ -10,7 +10,7 @@ Support server: https://discord.gg/RdGZ42SWSA
 
 1) Run main.py once, this will generate your config and cache json files.
 
-2) Set the bot token to your bot, and set the owner to your discord id. Run the bot again, and then send the message "sync command tree now" on your server. It should print a response message letting you know the sync is complete.
+2) In the config.json, set the bot token to your bot, and set the owner to your discord id. Run the bot again, and then send the message "sync command tree now" on your server. It should print a response message letting you know the sync is complete.
 
 
 
