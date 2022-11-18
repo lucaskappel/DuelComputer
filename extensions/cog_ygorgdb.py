@@ -146,7 +146,7 @@ class Cog_YGORGDB(commands.Cog):
     @app_commands.describe(card_id='Card ID to query and display')
     async def test_card_display(self, interaction: discord.Interaction, card_id: str):
         #await interaction.response.send_message(embed=await self.build_card_embed(card_id))
-        await self.get_card_image(card_id)
+        await get_card_image(card_id)
 
     #### #### App Commands #### #### Make sure to add these to the constructor!
 
@@ -161,7 +161,6 @@ class Cog_YGORGDB(commands.Cog):
 
         # For each of the QAs found replace the card ids with the names
         embed_list_qa = []
-        qa_card_id_list = []
         for qa_id_string in id_of_qa_posts_in_message.groups():
 
             # Create a new embed and add it to the list of embeds to display
@@ -169,8 +168,8 @@ class Cog_YGORGDB(commands.Cog):
             embed_list_qa.append(qa_embed)
 
             # Get the required data, loading from the cache if possible, saving to the cache if not.
-            qa_data = await self.get_qa_data(qa_id_string)
-            qa_card_id_list = [await self.get_card_data(str(card_id)) for card_id in qa_data['cards']]
+            qa_data = await get_qa_data(qa_id_string, self.ygorgdb_cache)
+            qa_card_id_list = [await get_card_data(str(card_id), self.ygorgdb_cache) for card_id in qa_data['cards']]
 
             # Use english if possible, otherwise use japanese.
             locale = 'en'
@@ -199,117 +198,85 @@ class Cog_YGORGDB(commands.Cog):
             # Send all the embeds, and let people select the cards from a dropdown!
             await interaction.followup.send(
                 embeds=embed_list_qa,
-                view=selectview_qa_dropdown(qa_card_id_list)
+                view=selectview_qa_dropdown(qa_card_id_list, self.ygorgdb_cache)
             )
 
-    #### #### Helper Methods #### ####
 
-    async def get_qa_data(self, qa_id):
-
-        # If the qna id is not in the cache, add it to the cache.
-        if qa_id not in list(self.ygorgdb_cache['cache_qna'].keys()):
-
-            # First open the api post request and get the information.
-            async with aiohttp.ClientSession() as client_session:
-                async with client_session.get(
-                        url=r"https://db.ygorganization.com/data/qa/" + qa_id) as request_response:
-                    if request_response.status != 200:
-                        print(f"Q&A retrieval failed: <{request_response.status}>\n{request_response.url}")
-                        return
-
-                    # Check the revision header
-                    received_x_cache_revision = int(request_response.headers.get("X-Cache-Revision"))
-                    if received_x_cache_revision > self.ygorgdb_cache["X-Cache-Revision"]:
-                        await self.manifest_revision(received_x_cache_revision)
-
-                    # If the request was successful, save the response json to the cache as an entry.
-                    self.ygorgdb_cache['cache_qna'][qa_id] = await request_response.json()
-
-        # After updating the cache, we can return the Q&A from the cache.
-        return self.ygorgdb_cache['cache_qna'][qa_id]
-
-    async def get_card_data(self, card_id):
-
-        # If the qna id is not in the cache, add it to the cache.
-        if card_id not in list(self.ygorgdb_cache['cache_card'].keys()):
-
-            # First open the api post request and get the information.
-            async with aiohttp.ClientSession() as client_session:
-                print(client_session.headers)
-                async with client_session.get(
-                        url=r"https://db.ygorganization.com/data/card/" + card_id) as request_response:
-                    if request_response.status != 200:
-                        print(f"Card retrieval failed: <{request_response.status}>\n{request_response.url}")
-                        return
-
-                    # Check the revision header
-                    received_x_cache_revision = int(request_response.headers.get("X-Cache-Revision"))
-                    if received_x_cache_revision > self.ygorgdb_cache["X-Cache-Revision"]:
-                        await self.manifest_revision(received_x_cache_revision)
-
-                    # If the request was successful, save the response json to the cache as an entry.
-                    self.ygorgdb_cache['cache_card'][card_id] = await request_response.json()
-
-        # After updating the cache, we can return the Q&A from the cache.
-        return self.ygorgdb_cache['cache_card'][card_id]
-
-    async def get_card_image(self, card_id): # TODO
-        image_path = r'resources/image_cache/artwork_' + card_id + '_.png'
-
-        # Create the cache folder if necessary
-        if not os.path.exists(r"/resources/image_cache/"): os.makedirs(r"/resources/image_cache/")
-
-        # If the image isn't cached, then go get it! :D
-        if not os.path.exists(image_path):
-            headers = { # Not sure why this is needed but it seems to work if I do this :I
-                "Referer": r"https://www.db.yugioh-card.com/yugiohdb/card_search.action?ope=2&cid=" + card_id
-            }
-            async with aiohttp.ClientSession(headers=headers) as client_session:
-                async with client_session.get(
-                        url=r"https://www.db.yugioh-card.com/yugiohdb/get_image.action?type=2&cid=" +
-                            card_id +
-                            "&ciid=1&enc=YE26X-CDN4OxiqeD_ivNWQ") as request_response:
-                    image_streamreader = request_response.content
-
-                    #with
-
-        return image_path
+#### #### Other Methods #### ####
 
 
+async def get_card_data(card_id, db_cache):
 
-    #### #### Other Methods #### ####
+    # If the qna id is not in the cache, add it to the cache.
+    if card_id not in list(db_cache['cache_card'].keys()):
 
-    async def manifest_revision(self, latest_x_cache_revision):
+        # First open the api post request and get the information.
+        async with aiohttp.ClientSession() as client_session:
+            print(client_session.headers)
+            async with client_session.get(
+                    url=r"https://db.ygorganization.com/data/card/" + card_id) as request_response:
+                if request_response.status != 200:
+                    print(f"Card retrieval failed: <{request_response.status}>\n{request_response.url}")
+                    return
 
-        # Get the json object of the changes.
+                # Check the revision header
+                received_x_cache_revision = int(request_response.headers.get("X-Cache-Revision"))
+                if received_x_cache_revision > db_cache["X-Cache-Revision"]:
+                    await manifest_revision(received_x_cache_revision, db_cache)
+
+                # If the request was successful, save the response json to the cache as an entry.
+                db_cache['cache_card'][card_id] = await request_response.json()
+
+    # After updating the cache, we can return the Q&A from the cache.
+    return db_cache['cache_card'][card_id]
+
+
+async def get_qa_data(qa_id, db_cache):
+    # If the qna id is not in the cache, add it to the cache.
+    if qa_id not in list(db_cache['cache_qna'].keys()):
+
+        # First open the api post request and get the information.
         async with aiohttp.ClientSession() as client_session:
             async with client_session.get(
-                    url=r"https://db.ygorganization.com/manifest/" + str(self.ygorgdb_cache['X-Cache-Revision'])
-            ) as request_response:
-                cache_changes = await request_response.json()
+                    url=r"https://db.ygorganization.com/data/qa/" + qa_id) as request_response:
+                if request_response.status != 200:
+                    print(f"Q&A retrieval failed: <{request_response.status}>\n{request_response.url}")
+                    return
 
-        print(f"Cache Changes:\n{cache_changes}")
+                # Check the revision header
+                received_x_cache_revision = int(request_response.headers.get("X-Cache-Revision"))
+                if received_x_cache_revision > db_cache["X-Cache-Revision"]:
+                    await manifest_revision(received_x_cache_revision, db_cache)
 
-        # Remove the old entries
-        change_counter = [0, 0]
-        for card_id in cache_changes["data"]["card"]:
-            if card_id in self.ygorgdb_cache["cache_card"]:
-                self.ygorgdb_cache["cache_card"].pop(card_id)
-                change_counter[0] += 1
+                # If the request was successful, save the response json to the cache as an entry.
+                db_cache['cache_qna'][qa_id] = await request_response.json()
 
-        for qa_id in cache_changes["data"]["qa"]:
-            if qa_id in self.ygorgdb_cache["cache_qna"]:
-                self.ygorgdb_cache["cache_qna"].pop(qa_id)
-                change_counter[1] += 1
-
-        # Update the manifest revision and re-write the cache file.
-        print(f"Invalidated {change_counter[0]} card entries and {change_counter[1]} QA entries.")
-        self.ygorgdb_cache['X-Cache-Revision'] = latest_x_cache_revision
-        return
+    # After updating the cache, we can return the Q&A from the cache.
+    return db_cache['cache_qna'][qa_id]
 
 
+async def get_card_image(card_id):  # TODO
+    image_path = r'resources/image_cache/artwork_' + card_id + '_.png'
 
-    #### #### #### #### Statics
+    # Create the cache folder if necessary
+    if not os.path.exists(r"/resources/image_cache/"): os.makedirs(r"/resources/image_cache/")
+
+    # If the image isn't cached, then go get it! :D
+    if not os.path.exists(image_path):
+        headers = {  # Not sure why this is needed but it seems to work if I do this :I
+            "Referer": r"https://www.db.yugioh-card.com/yugiohdb/card_search.action?ope=2&cid=" + card_id
+        }
+        async with aiohttp.ClientSession(headers=headers) as client_session:
+            async with client_session.get(
+                    url=r"https://www.db.yugioh-card.com/yugiohdb/get_image.action?type=2&cid=" +
+                        card_id +
+                        "&ciid=1&enc=YE26X-CDN4OxiqeD_ivNWQ") as request_response:
+                image_streamreader = request_response.content
+
+                # with
+
+    return image_path
+
 
 async def build_card_embed(card_data):
     card_data_local = card_data["cardData"]["en" if "en" in card_data['cardData'] else "ja"]
@@ -375,16 +342,47 @@ async def build_card_embed(card_data):
 
     return card_embed
 
-class selectview_qa_dropdown(discord.ui.View):
-    def __init__(self, card_list, *, timeout=180):
-        super().__init__(timeout=timeout)
-        self.add_item(select_qa_dropdown(card_list))
 
+async def manifest_revision(latest_x_cache_revision, db_cache):
+
+    # Get the json object of the changes.
+    async with aiohttp.ClientSession() as client_session:
+        async with client_session.get(
+                url=r"https://db.ygorganization.com/manifest/" + str(db_cache['X-Cache-Revision'])
+        ) as request_response:
+            cache_changes = await request_response.json()
+
+    print(f"Cache Changes:\n{cache_changes}")
+
+    # Remove the old entries
+    change_counter = [0, 0]
+    for card_id in cache_changes["data"]["card"]:
+        if card_id in db_cache["cache_card"]:
+            db_cache["cache_card"].pop(card_id)
+            change_counter[0] += 1
+
+    for qa_id in cache_changes["data"]["qa"]:
+        if qa_id in db_cache["cache_qna"]:
+            db_cache["cache_qna"].pop(qa_id)
+            change_counter[1] += 1
+
+    # Update the manifest revision and re-write the cache file.
+    print(f"Invalidated {change_counter[0]} card entries and {change_counter[1]} QA entries.")
+    db_cache['X-Cache-Revision'] = latest_x_cache_revision
+    return
+
+
+class selectview_qa_dropdown(discord.ui.View):
+    def __init__(self, card_list, db_cache, *, timeout=180):
+        super().__init__(timeout=timeout)
+        self.add_item(select_qa_dropdown(card_list, db_cache))
 
 class select_qa_dropdown(discord.ui.Select):  # View class to display the card in a Q&A
-    def __init__(self, card_list: [], locale='en'):
+    def __init__(self, card_list: [], db_cache, locale='en'):
+        self.ygorgdb_cache = db_cache
         card_options = [discord.SelectOption(
-            label=card['cardData'][locale if locale in card['cardData'] else 'ja']['name']
+            label=card['cardData'][locale if locale in card['cardData'] else 'ja']['name'],
+            value=card['cardData'][locale if locale in card['cardData'] else 'ja']['id']
         ) for card in card_list]
 
         super().__init__(
@@ -392,9 +390,16 @@ class select_qa_dropdown(discord.ui.Select):  # View class to display the card i
             options=card_options
         )
 
-    async def callback(self, interaction: discord.Interaction): # TODO need to add the card data here!! :(((( maybe just move it inside the cog? :/
-        await interaction.response.send_message(embed=build_card_embed())
+    async def callback(self, interaction: discord.Interaction):
+        print(self.values[0])
+        await interaction.response.send_message(
+            embed=await build_card_embed(
+                await get_card_data(self.values[0], self.ygorgdb_cache)
+            )
+        )
 
+
+#### #### #### ####
 
 async def setup(bot_client: commands.Bot) -> None:
     await bot_client.add_cog(Cog_YGORGDB(bot_client))
