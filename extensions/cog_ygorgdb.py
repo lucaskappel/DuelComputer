@@ -154,7 +154,7 @@ class Cog_YGORGDB(commands.Cog):
         await interaction.response.defer(thinking=False) # This could take longer than 3s.
 
         # Get the ids via regex
-        id_of_qa_posts_in_message = re.search(r"db.ygorganization.com\/qa#(\d*)", message.content)
+        id_of_qa_posts_in_message = re.search(r"db.ygorganization.com/qa#(\d*)", message.content)
         if id_of_qa_posts_in_message is None:
             await interaction.followup.send("Could not locate the Q&A id(s).")
             return
