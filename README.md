@@ -4,7 +4,7 @@ This is a discord bot designed for the purpose of aiding in content regarding Yu
 For an invite link, please message Bard#3883 on Discord.
 
 
-Setup instructions
+# Setup
 
 1) Run once, this will generate your config and cache json files.
 
@@ -12,7 +12,7 @@ Setup instructions
 
 
 
-Currently its primary purpose is to serve as a tool to quickly reference write-ups and resource about various topics.
+# Available Resources
 
 Included Links:
 - TCG Organized Play
