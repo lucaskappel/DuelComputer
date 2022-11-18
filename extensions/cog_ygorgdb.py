@@ -2,7 +2,6 @@ import aiohttp, re, os, json
 import discord
 from discord.ext import commands
 from discord import app_commands
-#from PIL import Image
 
 #### #### #### #### Static resources
 
@@ -145,8 +144,9 @@ class Cog_YGORGDB(commands.Cog):
     @app_commands.command(name="card_display")
     @app_commands.describe(card_id='Card ID to query and display')
     async def test_card_display(self, interaction: discord.Interaction, card_id: str):
-        #await interaction.response.send_message(embed=await self.build_card_embed(card_id))
-        await get_card_image(card_id)
+        card_data = await get_card_data(card_id, self.ygorgdb_cache)
+        card_embed = await build_card_embed(card_data)
+        await interaction.response.send_message(embed=card_embed)
 
     #### #### App Commands #### #### Make sure to add these to the constructor!
 
@@ -212,7 +212,6 @@ async def get_card_data(card_id, db_cache):
 
         # First open the api post request and get the information.
         async with aiohttp.ClientSession() as client_session:
-            #print(client_session.headers)
             async with client_session.get(
                     url=r"https://db.ygorganization.com/data/card/" + card_id) as request_response:
                 if request_response.status != 200:
@@ -255,41 +254,40 @@ async def get_qa_data(qa_id, db_cache):
     return db_cache['cache_qna'][qa_id]
 
 
-async def get_card_image(card_id):  # TODO
-    image_path = r'resources/image_cache/artwork_' + card_id + '_.png'
+async def get_card_image_url(card_id):
+    async with aiohttp.ClientSession() as client_session:
+        async with client_session.get(
+                url=r'https://artworks.ygorganization.com/manifest.json') as request_response:
+            if request_response.status != 200:
+                print(f"Card artwork manifest retrieval failed: <{request_response.status}>\n{request_response.url}")
+                return
 
-    # Create the cache folder if necessary
-    if not os.path.exists(r"/resources/image_cache/"): os.makedirs(r"/resources/image_cache/")
-
-    # If the image isn't cached, then go get it! :D
-    if not os.path.exists(image_path):
-        headers = {  # Not sure why this is needed but it seems to work if I do this :I
-            "Referer": r"https://www.db.yugioh-card.com/yugiohdb/card_search.action?ope=2&cid=" + card_id
-        }
-        async with aiohttp.ClientSession(headers=headers) as client_session:
-            async with client_session.get(
-                    url=r"https://www.db.yugioh-card.com/yugiohdb/get_image.action?type=2&cid=" +
-                        card_id +
-                        "&ciid=1&enc=YE26X-CDN4OxiqeD_ivNWQ") as request_response:
-                image_streamreader = request_response.content
-
-                # with
-
-    return image_path
+            card_artwork_manifest = await request_response.json()
+            target_card_image_url = card_artwork_manifest['cards'][card_id]['1']['bestArt']
+            if r'https:' not in target_card_image_url:
+                target_card_image_url = f"https:{target_card_image_url}"
+            print(target_card_image_url)
+            return target_card_image_url
 
 
 async def build_card_embed(card_data):
     card_data_local = card_data["cardData"]["en" if "en" in card_data['cardData'] else "ja"]
 
-    # TODO card art (electurmite) @ /yugiohdb/get_image.action?type=2&cid=13507&ciid=1&enc=YE26X-CDN4OxiqeD_ivNWQ
-
     # Build the embed
     card_embed = discord.Embed(
         title=card_data_local["name"],
-        url=r"https://db.ygorganization.com/card#" + [card_id for card_id in card_data][0]) # ulgy but w/e
+        url=r"https://db.ygorganization.com/card#" + str(card_data_local['id']),
+        description=''
+    )
+
+    # Add the image via the ygorg artwork db url
+    thumbnail_url = await get_card_image_url(str(card_data_local['id']))
+    card_embed.set_thumbnail(url=thumbnail_url)
 
     if card_data_local["cardType"] != "monster":
-        card_embed.description = f"{card_data_local['property']} {card_data_local['cardType']}".title()
+        if 'property' not in card_data_local: card_embed.description += "Normal"
+        else: card_embed.description += card_data_local['property'].title()
+        card_embed.description += f" {card_data_local['cardType']}".title()
         card_embed.add_field(
             name="Effect Text",
             value=card_data_local["effectText"])
@@ -377,6 +375,7 @@ class selectview_qa_dropdown(discord.ui.View):
         super().__init__(timeout=timeout)
         self.add_item(select_qa_dropdown(card_list, db_cache))
 
+
 class select_qa_dropdown(discord.ui.Select):  # View class to display the card in a Q&A
     def __init__(self, card_list: [], db_cache, locale='en'):
         self.ygorgdb_cache = db_cache
@@ -392,9 +391,7 @@ class select_qa_dropdown(discord.ui.Select):  # View class to display the card i
 
     async def callback(self, interaction: discord.Interaction):
         await interaction.response.send_message(
-            embed=await build_card_embed(
-                await get_card_data(self.values[0], self.ygorgdb_cache)
-            )
+            embed=await build_card_embed(await get_card_data(self.values[0], self.ygorgdb_cache))
         )
 
 
