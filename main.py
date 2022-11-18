@@ -22,9 +22,7 @@ def load_config(): # Load (or create) the config file which will let the bot run
             bot_config = {
                 "auth_token": "abcdefghijklmnopqrstuvwxyz.123456.7890-abcdefghijklmnopqrstuvwxyz1234567",
                 "owner_id": "183033825108951041",
-                "command_prefix": "+",
-                "CHALLONGE_USERNAME": "none",
-                "CHALLONGE_TOKEN": "none",
+                "command_prefix": "+"
             }
             json.dump(bot_config, config_file)  # Set the config to the above template
             sys.exit()  # User will need to edit the config file and set all the necessary info.
