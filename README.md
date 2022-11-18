@@ -1,7 +1,7 @@
 # DuelComp
 This is a discord bot designed for the purpose of aiding in content regarding Yu-Gi-Oh!
 
-For an invite link, please message Bard#3883 on Discord.
+Support server: https://discord.gg/RdGZ42SWSA
 
 
 # Setup
