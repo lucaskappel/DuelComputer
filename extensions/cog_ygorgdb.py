@@ -212,7 +212,7 @@ async def get_card_data(card_id, db_cache):
 
         # First open the api post request and get the information.
         async with aiohttp.ClientSession() as client_session:
-            print(client_session.headers)
+            #print(client_session.headers)
             async with client_session.get(
                     url=r"https://db.ygorganization.com/data/card/" + card_id) as request_response:
                 if request_response.status != 200:
@@ -391,7 +391,6 @@ class select_qa_dropdown(discord.ui.Select):  # View class to display the card i
         )
 
     async def callback(self, interaction: discord.Interaction):
-        print(self.values[0])
         await interaction.response.send_message(
             embed=await build_card_embed(
                 await get_card_data(self.values[0], self.ygorgdb_cache)
