@@ -19,6 +19,7 @@ Support server: https://discord.gg/RdGZ42SWSA
 Included Links:
 - TCG Organized Play
 - TCG Gameplay
+- TCG/OCG Card Differences
 - OCG Rulings Database Translation
 - UDE Ruligns Archive
 - TCG Rulebook
