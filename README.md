@@ -22,6 +22,7 @@ Support server: https://discord.gg/RdGZ42SWSA
 - Resource -> Autocomplete query for content, from one of the following:
 
 ### Resources
+Links:
 - TCG Organized Play
 - TCG Gameplay
 - TCG/OCG Card Differences
