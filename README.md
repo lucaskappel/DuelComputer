@@ -14,8 +14,11 @@ Support server: https://discord.gg/RdGZ42SWSA
 
 
 # Features
-- Provided a link to a Q&A post from https://db.ygorganization.com/, can read the content and then allow users to also query and pull up the relevant cards within it from a select view.
-- Display card when queried by ID.
+## App Commands
+- Read Q&A Entry -> Provided a link to a Q&A post from https://db.ygorganization.com/, can read the content and then allow users to also query and pull up the relevant cards within it from a select view.
+
+## Slash Commands
+- Display Card -> Queries and displays the card with the given ID.
 
 
 # Available Resources
