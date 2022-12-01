@@ -19,11 +19,9 @@ Support server: https://discord.gg/RdGZ42SWSA
 
 ## Slash Commands
 - Display Card -> Queries and displays the card with the given ID.
+- Resource -> Autocomplete query for content, from one of the following:
 
-
-# Available Resources
-
-Included Links:
+### Resources
 - TCG Organized Play
 - TCG Gameplay
 - TCG/OCG Card Differences
