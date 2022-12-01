@@ -45,7 +45,13 @@
     "alias": "pazim",
     "type": "link",
     "content": "https://www.dropbox.com/sh/y4yemd7hpk99x6x/AABFPFPYQA-OuXBqs8HwNpM9a?preview=Judge+Resources.pdf",
-    "help": "An unofficial resource collection by pazim#1386. ATK/DEF modifiers, leaving the field, Prohibition & Psi Blocker. If you share this make sure to give credit to Pazim."
+    "help": "An unofficial resource collection by Pazim. ATK/DEF modifiers, leaving the field, Prohibition & Psi Blocker."
+  },
+  "TCG/OCG Differences": {
+    "alias": "tcgvsocg",
+    "type": "link",
+    "content": "https://yugioh-diffs.github.io/",
+    "help": "A github page detailing functional card differences between the TCG and OCG, by gallantron#1059"
   },
 
   "Fast Effect Timing Chart": {
