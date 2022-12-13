@@ -109,7 +109,7 @@ class Cog_YGORGDB(commands.Cog):
     def __init__(self, bot_client: commands.Bot) -> None:
         self.bot_client = bot_client
 
-        # If there is no cache, then create one using the default format above.
+        # If there is no cache, then create one using the default format ygorgdb_cache
         if not os.path.exists(r'resources/ygorgdb_cache.json'):
             with open(r'resources/ygorgdb_cache.json', 'w', encoding='utf8') as cache_file:
                 json.dump(self.ygorgdb_cache, cache_file)
@@ -144,9 +144,10 @@ class Cog_YGORGDB(commands.Cog):
     @app_commands.command(name="card_display")
     @app_commands.describe(card_id='Card ID to query and display')
     async def test_card_display(self, interaction: discord.Interaction, card_id: str):
+        interaction.response.defer(thinking=False)
         card_data = await get_card_data(card_id, self.ygorgdb_cache)
         card_embed = await build_card_embed(card_data)
-        await interaction.response.send_message(embed=card_embed)
+        await interaction.followup.send(embed=card_embed)
 
     #### #### App Commands #### #### Make sure to add these to the constructor!
 
@@ -161,6 +162,7 @@ class Cog_YGORGDB(commands.Cog):
 
         # For each of the QAs found replace the card ids with the names
         embed_list_qa = []
+        qa_card_id_list = []
         for qa_id_string in id_of_qa_posts_in_message.groups():
 
             # Create a new embed and add it to the list of embeds to display
@@ -185,24 +187,45 @@ class Cog_YGORGDB(commands.Cog):
                             f'***{qa_card["cardData"][locale]["name"]}***'
                         )
 
-            # Now construct the embed!
-            qa_embed.add_field(
+            # Now construct the embed! Split the question and answer if they're too long.
+            embed_field_size = 1024
+
+            qa_question_text = qa_data['qaData'][locale]['question']
+            qa_question_segments = [
+                qa_question_text[i:i+embed_field_size] for i in range(0, len(qa_question_text), embed_field_size)
+            ]
+            qa_embed.add_field( # Initial field
                 name='Question',
-                value=qa_data['qaData'][locale]['question']
+                value=qa_question_segments[0]
             )
-            qa_embed.add_field(
+            for question_segment in qa_question_segments[1:]: # (cont.) if necessary
+                qa_embed.add_field(
+                    name='Question (cont.)',
+                    value=question_segment
+                )
+
+            qa_answer_text = qa_data['qaData'][locale]['answer']
+            qa_answer_segments = [
+                qa_answer_text[i:i + embed_field_size] for i in range(0, len(qa_answer_text), embed_field_size)
+            ]
+            qa_embed.add_field( # Initial field
                 name='Answer',
-                value=qa_data['qaData'][locale]['answer']
+                value=qa_answer_segments[0]
             )
+            for answer_segment in qa_answer_segments[1:]:  # (cont.) if necessary
+                qa_embed.add_field(
+                    name='Answer (cont.)',
+                    value=answer_segment
+                )
 
-            # Send all the embeds, and let people select the cards from a dropdown!
-            await interaction.followup.send(
-                embeds=embed_list_qa,
-                view=selectview_qa_dropdown(qa_card_id_list, self.ygorgdb_cache)
-            )
+        # Send all the embeds, and let people select the cards from a dropdown!
+        await interaction.followup.send(
+            embeds=embed_list_qa,
+            view=selectview_qa_dropdown(qa_card_id_list, self.ygorgdb_cache)
+        )
 
 
-#### #### Other Methods #### ####
+#### #### Static Methods #### ####
 
 
 async def get_card_data(card_id, db_cache):
@@ -256,12 +279,15 @@ async def get_qa_data(qa_id, db_cache):
 
 async def get_card_image_url(card_id):
     async with aiohttp.ClientSession() as client_session:
+
+        # Get the manifest file from which we will extract the url of the image we need.
         async with client_session.get(
                 url=r'https://artworks.ygorganization.com/manifest.json') as request_response:
             if request_response.status != 200:
                 print(f"Card artwork manifest retrieval failed: <{request_response.status}>\n{request_response.url}")
                 return
 
+            # Pull out the json and select the bestArt of the card with the id we need.
             card_artwork_manifest = await request_response.json()
             target_card_image_url = card_artwork_manifest['cards'][card_id]['1']['bestArt']
             if r'https:' not in target_card_image_url:
@@ -386,11 +412,12 @@ class select_qa_dropdown(discord.ui.Select):  # View class to display the card i
 
         super().__init__(
             placeholder="Select cards to display from the Q&A entry.",
-            options=card_options
+            options=card_options[:24]
         )
 
     async def callback(self, interaction: discord.Interaction):
-        await interaction.response.send_message(
+        await interaction.response.defer(thinking=False) # This could take longer than 3s.
+        await interaction.followup.send(
             embed=await build_card_embed(await get_card_data(self.values[0], self.ygorgdb_cache))
         )
 
