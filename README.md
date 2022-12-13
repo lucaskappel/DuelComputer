@@ -13,7 +13,6 @@ Support server: https://discord.gg/RdGZ42SWSA
 2) In the config.json, set the bot token to your bot, and set the owner to your discord id. Run the bot again, and then send the message "sync command tree now" on your server. It should print a response message letting you know the sync is complete.
 
 
-# Features
 ## App Commands
 - Read Q&A Entry -> Provided a link to a Q&A post from https://db.ygorganization.com/, can read the content and then allow users to also query and pull up the relevant cards within it from a select view.
 
