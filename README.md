@@ -19,4 +19,4 @@ Support server: https://discord.gg/RdGZ42SWSA
 
 ## Slash Commands
 - Display Card -> Queries and displays the card with the given ID.
-- Resource -> Autocomplete query for content, from one of the following:
+- Resource -> Autocomplete query for content, various links, images, and writeups.
