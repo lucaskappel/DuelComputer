@@ -102,5 +102,11 @@
     "type": "writeup",
     "content": "Generally, only effects that meet at least one of these criteria can be activated during the Damage Step:\n\n  ● Counter Trap card activations\n  ● Mandatory effects\n  ● Fast effects which directly modify ATK/DEF. (Only before reaching \"During Damage Calculation\")\n  ● Fast effects which negate effect activations\n  ● Trigger effects which activate in response to the activating card being moved (including battle position changes)\n  ● Effects whose activation condition is specific to the Damage Step (Ex: destruction by battle)\n\nAdditionally, effects' text may explicitly allow or disallow activation in the Damage Step.\nFurthermore, some old cards may have explicit rulings which allow or disallow activation in the Damage Step.\n\nAdditional information regarding the Battle Phase and Damage Step can be found at:\nhttps://www.yugioh-card.com/en/gameplay/damage_step/",
     "help": "Am I allowed to activate this effect in the Damage Step?"
+  },
+  "Battle Damage Calculation": {
+    "alias": "battledamage",
+    "type": "writeup",
+    "content": "Source: https://db.ygorganization.com/qa#23822\n\nBattle damage is determined by considering different types of effects in the following order.\nNote, if two monsters occupy the same classification here, their effects do not interact with each other.\n\n01: Inflicts double battle damage (*Blue-Eyes Chaos MAX Dragon*)\n02: Battle damage is taken by both players. (*Double-Edged Sword*)\n03: Battle damage you take is also inflicted to your opponent / your opponent takes any battle damage you would take instead. (Mikanko of the Oohime)\n04: Battle damage is treated as effect damage.\n05: The player gains Life Points instead of taking battle damage.\n06: Battle damage becomes 0.\n07: Battle damage is halved.\n08: Battle damage is doubled. (Odd-Eyes Pendulum Dragon)\n09: Battle damage becomes X (X being a predetermined value).\n10: You do not take battle damage if it is more or less than X.",
+    "help": "How do I calculate battle damage for x interaction?"
   }
 }
