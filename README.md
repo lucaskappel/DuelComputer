@@ -6,7 +6,7 @@ Support server: https://discord.gg/RdGZ42SWSA
 
 # Setup
 
-0) Make sure all the necessary libs are installed. Ideally make a venv with all the right stuff. Should just needs discord.py.
+0) Make sure all the necessary libs are installed. Ideally make a venv with all the right stuff. Should just need discord.py.
 
 1) Run main.py once, this will generate your config and cache json files.
 
