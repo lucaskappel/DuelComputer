@@ -113,12 +113,11 @@ class Cog_YGORGDB(commands.Cog):
         if not os.path.exists(r'resources/ygorgdb_cache.json'):
             with open(r'resources/ygorgdb_cache.json', 'w', encoding='utf8') as cache_file:
                 json.dump(self.ygorgdb_cache, cache_file)
+        else: # Load the cache
+            with open(r'resources/ygorgdb_cache.json', 'r', encoding='utf8') as cache_file:
+                self.ygorgdb_cache = json.load(cache_file)
 
-        # Load the cache
-        with open(r'resources/ygorgdb_cache.json', 'r', encoding='utf8') as cache_file:
-            self.ygorgdb_cache = json.load(cache_file)
-
-        # Load the context menus
+        # Load the context menu commands
         self.context_menu_list = [
             app_commands.ContextMenu(
                 name='Read Database Q&A Link',
@@ -143,8 +142,8 @@ class Cog_YGORGDB(commands.Cog):
 
     @app_commands.command(name="card_display")
     @app_commands.describe(card_id='Card ID to query and display')
-    async def test_card_display(self, interaction: discord.Interaction, card_id: str):
-        interaction.response.defer(thinking=False)
+    async def display_card_by_id(self, interaction: discord.Interaction, card_id: str):
+        interaction.response.defer(thinking=False) # Getting the card data will probably take >3s
         card_data = await get_card_data(card_id, self.ygorgdb_cache)
         card_embed = await build_card_embed(card_data)
         await interaction.followup.send(embed=card_embed)
@@ -154,13 +153,13 @@ class Cog_YGORGDB(commands.Cog):
     async def read_qa_link(self, interaction: discord.Interaction, message: discord.Message) -> None:
         await interaction.response.defer(thinking=False) # This could take longer than 3s.
 
-        # Get the ids via regex
+        # Get the qna ids via regex
         id_of_qa_posts_in_message = re.search(r"db.ygorganization.com/qa#(\d*)", message.content)
         if id_of_qa_posts_in_message is None:
             await interaction.followup.send("Could not locate the Q&A id(s).")
             return
 
-        # For each of the QAs found replace the card ids with the names
+        # For each of the QAs found replace the card ids with the names (save the ids for the dropdown!)
         embed_list_qa = []
         qa_card_id_list = []
         for qa_id_string in id_of_qa_posts_in_message.groups():
@@ -174,6 +173,7 @@ class Cog_YGORGDB(commands.Cog):
             qa_card_id_list = [await get_card_data(str(card_id), self.ygorgdb_cache) for card_id in qa_data['cards']]
 
             # Use english if possible, otherwise use japanese.
+            # TODO change display language by user's locale.
             locale = 'en'
             if 'en' not in qa_data['qaData']: locale = 'ja'
 
@@ -220,15 +220,15 @@ class Cog_YGORGDB(commands.Cog):
 
         # Send all the embeds, and let people select the cards from a dropdown!
         await interaction.followup.send(
-            embeds=embed_list_qa,
-            view=selectview_qa_dropdown(qa_card_id_list, self.ygorgdb_cache)
+            embeds=embed_list_qa, # this is all the QAs
+            view=selectview_qa_dropdown(qa_card_id_list, self.ygorgdb_cache) # This is the dropdown
         )
 
 
 #### #### Static Methods #### ####
 
 
-async def get_card_data(card_id, db_cache):
+async def get_card_data(card_id, db_cache): # TODO combine get_card_data() and get_qa_data()
 
     # If the qna id is not in the cache, add it to the cache.
     if card_id not in list(db_cache['cache_card'].keys()):
@@ -249,7 +249,7 @@ async def get_card_data(card_id, db_cache):
                 # If the request was successful, save the response json to the cache as an entry.
                 db_cache['cache_card'][card_id] = await request_response.json()
 
-    # After updating the cache, we can return the Q&A from the cache.
+    # After updating the cache, we can return the Q&A from the cache. (Inefficient but elegant)
     return db_cache['cache_card'][card_id]
 
 
@@ -273,7 +273,7 @@ async def get_qa_data(qa_id, db_cache):
                 # If the request was successful, save the response json to the cache as an entry.
                 db_cache['cache_qna'][qa_id] = await request_response.json()
 
-    # After updating the cache, we can return the Q&A from the cache.
+    # After updating the cache, we can return the Q&A from the cache. (Inefficient but elegant)
     return db_cache['cache_qna'][qa_id]
 
 
@@ -292,7 +292,7 @@ async def get_card_image_url(card_id):
             target_card_image_url = card_artwork_manifest['cards'][card_id]['1']['bestArt']
             if r'https:' not in target_card_image_url:
                 target_card_image_url = f"https:{target_card_image_url}"
-            print(target_card_image_url)
+            print(target_card_image_url) # Debug
             return target_card_image_url
 
 
@@ -310,6 +310,7 @@ async def build_card_embed(card_data):
     thumbnail_url = await get_card_image_url(str(card_data_local['id']))
     card_embed.set_thumbnail(url=thumbnail_url)
 
+    # Parse the properties for Spells and Traps, i.e. Continuous, Quick-Play, etc.
     if card_data_local["cardType"] != "monster":
         if 'property' not in card_data_local: card_embed.description += "Normal"
         else: card_embed.description += card_data_local['property'].title()
@@ -342,7 +343,7 @@ async def build_card_embed(card_data):
         # Attribute
         card_embed.description += f"\n{card_data_local['attribute'].upper()} - Attribute"
 
-        # Properties
+        # Properties, i.e. "Normal", "Tuner", "Beast-Warrior", etc.
         property_string = list(map( # Map them from the property enum.
             lambda prop: enum_monster_properties[prop]["en" if "en" in card_data['cardData'] else "ja"],
             card_data_local['properties']
@@ -412,7 +413,7 @@ class select_qa_dropdown(discord.ui.Select):  # View class to display the card i
 
         super().__init__(
             placeholder="Select cards to display from the Q&A entry.",
-            options=card_options[:24]
+            options=card_options[:24] # Make sure you don't put more options than is allowed! First 24 only.
         )
 
     async def callback(self, interaction: discord.Interaction):
@@ -420,6 +421,8 @@ class select_qa_dropdown(discord.ui.Select):  # View class to display the card i
         await interaction.followup.send(
             embed=await build_card_embed(await get_card_data(self.values[0], self.ygorgdb_cache))
         )
+        # TODO redraw the dropdown to remove the monster queried.
+        await interaction.edit_original_response(view=self.view) # Redraws the dropdown to deselect the monster.
 
 
 #### #### #### ####
