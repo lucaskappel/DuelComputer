@@ -112,7 +112,7 @@ class Cog_YGORGDB(commands.Cog):
         # If there is no cache, then create one using the default format ygorgdb_cache
         if not os.path.exists(r'resources/ygorgdb_cache.json'):
             with open(r'resources/ygorgdb_cache.json', 'w', encoding='utf8') as cache_file:
-                json.dump(self.ygorgdb_cache, cache_file)
+                json.dump(self.ygorgdb_cache, cache_file, sort_keys=True, indent=4)
         else: # Load the cache
             with open(r'resources/ygorgdb_cache.json', 'r', encoding='utf8') as cache_file:
                 self.ygorgdb_cache = json.load(cache_file)
