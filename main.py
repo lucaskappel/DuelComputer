@@ -36,7 +36,7 @@ def run_bot():
     bot_config = load_config()
     bot_client = Bot_Client(
         command_prefix=bot_config["command_prefix"],
-        intents=discord.Intents.all(),
+        intents=discord.Intents.default(),
         activity=discord.Activity(
             type=discord.ActivityType.watching,
             name="for dissidence"
@@ -65,7 +65,7 @@ def run_bot():
                       re.IGNORECASE).match(message.content):
             await message.channel.send(f'An amusing attempt to hurt my algorithmic feelings, meatbag.')
 
-        await bot_client.process_commands(message) # after conversations, pass the message to the command handler
+        return # await bot_client.process_commands(message) # after conversations, pass the message to the command handler
 
     @bot_client.event
     async def on_ready(): print(f'System {bot_client.user} initialized. Beginning guild observation.')
