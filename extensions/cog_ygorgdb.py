@@ -118,12 +118,13 @@ class Cog_YGORGDB(commands.Cog):
                 self.ygorgdb_cache = json.load(cache_file)
 
         # Load the context menu commands
-        self.context_menu_list = [
+        self.list_of_context_menu_commands_to_add = [
             app_commands.ContextMenu(
                 name='Read Database Q&A Link',
-                callback=self.read_qa_link)
-        ]
-        for context_menu in self.context_menu_list: self.bot_client.tree.add_command(context_menu)
+                callback=self.read_qa_link)]
+        for context_menu_command in self.list_of_context_menu_commands_to_add:
+            self.bot_client.tree.add_command(context_menu_command)
+
         return
 
     def __del__(self):
@@ -133,9 +134,10 @@ class Cog_YGORGDB(commands.Cog):
 
     async def cog_unload(self) -> None:
         # Unload the context menus
-        for context_menu in self.context_menu_list: self.bot_client.tree.remove_command(
-            context_menu.name, type=context_menu.type
+        for context_menu_command in self.list_of_context_menu_commands_to_add: self.bot_client.tree.remove_command(
+            context_menu_command.name, type=context_menu_command.type
         )
+
         return
 
     #### #### Slash Commands #### ####
@@ -144,93 +146,99 @@ class Cog_YGORGDB(commands.Cog):
     @app_commands.describe(card_id='Card ID to query and display')
     async def display_card_by_id(self, interaction: discord.Interaction, card_id: str):
         interaction.response.defer(thinking=False) # Getting the card data will probably take >3s
-        card_data = await get_card_data(card_id, self.ygorgdb_cache)
-        card_embed = await build_card_embed(card_data)
-        await interaction.followup.send(embed=card_embed)
+        data_of_card_to_display = await get_card_data(card_id, self.ygorgdb_cache)
+        embed_of_card_to_be_sent = await build_card_embed(data_of_card_to_display)
+        await interaction.followup.send(embed=embed_of_card_to_be_sent)
 
     #### #### App Commands #### #### Make sure to add these to the constructor!
 
     async def read_qa_link(self, interaction: discord.Interaction, message: discord.Message) -> None:
         await interaction.response.defer(thinking=False) # This could take longer than 3s.
 
-        # Get the qna ids via regex
+        # Get the QA IDs via regex
         id_of_qa_posts_in_message = re.search(r"db.ygorganization.com/qa#(\d*)", message.content)
         if id_of_qa_posts_in_message is None:
             await interaction.followup.send("Could not locate the Q&A id(s).")
             return
 
         # For each of the QAs found replace the card ids with the names (save the ids for the dropdown!)
-        embed_list_qa = []
-        qa_card_id_list = []
-        for qa_id_string in id_of_qa_posts_in_message.groups():
+        list_of_embeds_for_QAs_in_message = []
+        list_of_card_IDs_in_all_QAs = []
+        for QA_IDs_found_in_message in id_of_qa_posts_in_message.groups():
 
             # Create a new embed and add it to the list of embeds to display
-            qa_embed = discord.Embed()
-            embed_list_qa.append(qa_embed)
+            embed_for_this_QA = discord.Embed()
+            list_of_embeds_for_QAs_in_message.append(embed_for_this_QA)
 
             # Get the required data, loading from the cache if possible, saving to the cache if not.
-            qa_data = await get_qa_data(qa_id_string, self.ygorgdb_cache)
-            qa_card_id_list = [await get_card_data(str(card_id), self.ygorgdb_cache) for card_id in qa_data['cards']]
+            data_for_this_QA = await get_qa_data(QA_IDs_found_in_message, self.ygorgdb_cache)
+            list_of_card_IDs_in_all_QAs = [
+                await get_card_data(str(card_id), self.ygorgdb_cache) for card_id in data_for_this_QA['cards']
+            ]
 
             # Use english if possible, otherwise use japanese.
             # TODO change display language by user's locale.
             locale = 'en'
-            if 'en' not in qa_data['qaData']: locale = 'ja'
+            if 'en' not in data_for_this_QA['qaData']: locale = 'ja'
+            localized_QA_data = data_for_this_QA['qaData'][locale]
 
             # Replace the <<ids>> with the card names.
-            for qa_data_component in qa_data['qaData'][locale]: # For each part of the Q&A
-                if isinstance(qa_data['qaData'][locale][qa_data_component], str): # If the part is a string...
-                    for qa_card in qa_card_id_list: # Take each card
-                        qa_data['qaData'][locale][qa_data_component] = qa_data['qaData'][locale][qa_data_component]\
-                            .replace( # And replace its id with its name.
+            for qa_data_component in localized_QA_data: # For each part of the Q&A
+                if isinstance(localized_QA_data[qa_data_component], str): # If the part is a string...
+                    for qa_card in list_of_card_IDs_in_all_QAs: # Take each card
+                        localized_QA_data[qa_data_component] = localized_QA_data[qa_data_component].replace(
+                            # And replace its id with its name.
                             f'<<{qa_card["cardData"][locale]["id"]}>>',
                             f'***{qa_card["cardData"][locale]["name"]}***'
                         )
 
             # Now construct the embed! Split the question and answer if they're too long.
-            embed_field_size = 1024
+            embed_char_limit = 1024
 
-            qa_question_text = qa_data['qaData'][locale]['question']
+            # Question
+            qa_question_text = localized_QA_data['question']
             qa_question_segments = [
-                qa_question_text[i:i+embed_field_size] for i in range(0, len(qa_question_text), embed_field_size)
+                qa_question_text[i:i+embed_char_limit] for i in range(0, len(qa_question_text), embed_char_limit)
             ]
-            qa_embed.add_field( # Initial field
+            embed_for_this_QA.add_field( # Initial field
                 name='Question',
                 value=qa_question_segments[0]
             )
             for question_segment in qa_question_segments[1:]: # (cont.) if necessary
-                qa_embed.add_field(
+                embed_for_this_QA.add_field(
                     name='Question (cont.)',
                     value=question_segment
                 )
 
-            qa_answer_text = qa_data['qaData'][locale]['answer']
+            # Answer
+            qa_answer_text = localized_QA_data['answer']
             qa_answer_segments = [
-                qa_answer_text[i:i + embed_field_size] for i in range(0, len(qa_answer_text), embed_field_size)
+                qa_answer_text[i:i + embed_char_limit] for i in range(0, len(qa_answer_text), embed_char_limit)
             ]
-            qa_embed.add_field( # Initial field
+            embed_for_this_QA.add_field( # Initial field
                 name='Answer',
                 value=qa_answer_segments[0]
             )
             for answer_segment in qa_answer_segments[1:]:  # (cont.) if necessary
-                qa_embed.add_field(
+                embed_for_this_QA.add_field(
                     name='Answer (cont.)',
                     value=answer_segment
                 )
 
         # Send all the embeds, and let people select the cards from a dropdown!
         await interaction.followup.send(
-            embeds=embed_list_qa, # this is all the QAs
-            view=selectview_qa_dropdown(qa_card_id_list, self.ygorgdb_cache) # This is the dropdown
+            embeds=list_of_embeds_for_QAs_in_message, # this is all the QAs
+            view=selectview_qa_dropdown(list_of_card_IDs_in_all_QAs, self.ygorgdb_cache) # This is the dropdown
         )
 
 
 #### #### Static Methods #### ####
 
 
-async def get_card_data(card_id, db_cache): # TODO combine get_card_data() and get_qa_data()
+# TODO combine get_card_data() and get_qa_data()
+async def get_card_data(card_id, db_cache):
 
-    # If the qna id is not in the cache, add it to the cache.
+    # If the card id is not in the cache, add it to the cache.
     if card_id not in list(db_cache['cache_card'].keys()):
 
         # First open the api post request and get the information.
@@ -249,7 +257,7 @@ async def get_card_data(card_id, db_cache): # TODO combine get_card_data() and g
                 # If the request was successful, save the response json to the cache as an entry.
                 db_cache['cache_card'][card_id] = await request_response.json()
 
-    # After updating the cache, we can return the Q&A from the cache. (Inefficient but elegant)
+    # After updating the cache, we can return the Q&A from the cache.
     return db_cache['cache_card'][card_id]
 
 
@@ -273,7 +281,7 @@ async def get_qa_data(qa_id, db_cache):
                 # If the request was successful, save the response json to the cache as an entry.
                 db_cache['cache_qna'][qa_id] = await request_response.json()
 
-    # After updating the cache, we can return the Q&A from the cache. (Inefficient but elegant)
+    # After updating the cache, we can return the Q&A from the cache.
     return db_cache['cache_qna'][qa_id]
 
 
@@ -297,73 +305,73 @@ async def get_card_image_url(card_id):
 
 
 async def build_card_embed(card_data):
-    card_data_local = card_data["cardData"]["en" if "en" in card_data['cardData'] else "ja"]
+    localized_card_data = card_data["cardData"]["en" if "en" in card_data['cardData'] else "ja"]
 
     # Build the embed
     card_embed = discord.Embed(
-        title=card_data_local["name"],
-        url=r"https://db.ygorganization.com/card#" + str(card_data_local['id']),
+        title=localized_card_data["name"],
+        url=r"https://db.ygorganization.com/card#" + str(localized_card_data['id']),
         description=''
     )
 
     # Add the image via the ygorg artwork db url
-    thumbnail_url = await get_card_image_url(str(card_data_local['id']))
+    thumbnail_url = await get_card_image_url(str(localized_card_data['id']))
     card_embed.set_thumbnail(url=thumbnail_url)
 
     # Parse the properties for Spells and Traps, i.e. Continuous, Quick-Play, etc.
-    if card_data_local["cardType"] != "monster":
-        if 'property' not in card_data_local: card_embed.description += "Normal"
-        else: card_embed.description += card_data_local['property'].title()
-        card_embed.description += f" {card_data_local['cardType']}".title()
+    if localized_card_data["cardType"] != "monster":
+        if 'property' not in localized_card_data: card_embed.description += "Normal"
+        else: card_embed.description += localized_card_data['property'].title()
+        card_embed.description += f" {localized_card_data['cardType']}".title()
         card_embed.add_field(
             name="Effect Text",
-            value=card_data_local["effectText"])
+            value=localized_card_data["effectText"])
 
     else: # Build it as a monster. Consider pendulum/xyz/link/normal
 
         # Level/Rank/Link/Scale
         card_embed.description = ""
 
-        if "level" in card_data_local:
-            card_embed.description += f"☆Level: {card_data_local['level']}"
+        if "level" in localized_card_data:
+            card_embed.description += f"☆Level: {localized_card_data['level']}"
 
-        elif "rank" in card_data_local:
-            card_embed.description += f"★Rank: {card_data_local['rank']}"
+        elif "rank" in localized_card_data:
+            card_embed.description += f"★Rank: {localized_card_data['rank']}"
 
-        elif "linkRating" in card_data_local:
-            card_embed.description += f"Rating: Link-{card_data_local['linkRating']}\t("
+        elif "linkRating" in localized_card_data:
+            card_embed.description += f"Rating: Link-{localized_card_data['linkRating']}\t("
 
-            for link_arrow in card_data_local['linkArrows']:
+            for link_arrow in localized_card_data['linkArrows']:
                 card_embed.description += enum_linkArrow[int(link_arrow)]
             card_embed.description += ")"
 
-        if "pendulumScale" in card_data_local:
-            card_embed.description += f" | ⬖Pendulum Scale: {card_data_local['pendulumScale']}"
+        if "pendulumScale" in localized_card_data:
+            card_embed.description += f" | ⬖Pendulum Scale: {localized_card_data['pendulumScale']}"
 
         # Attribute
-        card_embed.description += f"\n{card_data_local['attribute'].upper()} - Attribute"
+        card_embed.description += f"\n{localized_card_data['attribute'].upper()} - Attribute"
 
         # Properties, i.e. "Normal", "Tuner", "Beast-Warrior", etc.
         property_string = list(map( # Map them from the property enum.
             lambda prop: enum_monster_properties[prop]["en" if "en" in card_data['cardData'] else "ja"],
-            card_data_local['properties']
+            localized_card_data['properties']
         ))
         card_embed.description += f"\n[{' / '.join(property_string)}]\n"
 
         # ATK/DEF
-        card_embed.description += f"ATK: {card_data_local['atk']}"
-        if 'def' in card_data_local: card_embed.description += f"\tDEF: {card_data_local['def']}"
+        card_embed.description += f"ATK: {localized_card_data['atk']}"
+        if 'def' in localized_card_data: card_embed.description += f"\tDEF: {localized_card_data['def']}"
 
         # Pendulum Effect
-        if 'pendulumEffectText' in card_data_local:
+        if 'pendulumEffectText' in localized_card_data:
             card_embed.add_field(
                 name="Pendulum Text",
-                value=card_data_local['pendulumEffectText'])
+                value=localized_card_data['pendulumEffectText'])
 
         # Effect/Flavor Text
         card_embed.add_field(
             name="Card Text",
-            value=card_data_local['effectText'])
+            value=localized_card_data['effectText'])
 
     return card_embed
 
@@ -381,15 +389,17 @@ async def manifest_revision(latest_x_cache_revision, db_cache):
 
     # Remove the old entries
     change_counter = [0, 0]
-    for card_id in cache_changes["data"]["card"]:
-        if card_id in db_cache["cache_card"]:
-            db_cache["cache_card"].pop(card_id)
-            change_counter[0] += 1
+    if "card" in cache_changes["data"]:
+        for card_id in cache_changes["data"]["card"]:
+            if card_id in db_cache["cache_card"]:
+                db_cache["cache_card"].pop(card_id)
+                change_counter[0] += 1
 
-    for qa_id in cache_changes["data"]["qa"]:
-        if qa_id in db_cache["cache_qna"]:
-            db_cache["cache_qna"].pop(qa_id)
-            change_counter[1] += 1
+    if "qa" in cache_changes["data"]:
+        for qa_id in cache_changes["data"]["qa"]:
+            if qa_id in db_cache["cache_qna"]:
+                db_cache["cache_qna"].pop(qa_id)
+                change_counter[1] += 1
 
     # Update the manifest revision and re-write the cache file.
     print(f"Invalidated {change_counter[0]} card entries and {change_counter[1]} QA entries.")
