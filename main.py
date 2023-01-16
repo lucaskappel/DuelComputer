@@ -8,7 +8,7 @@ from discord.ext import commands
 
 
 class Bot_Client(commands.Bot):
-    async def setup_hook(self): # Load cogs and extensions in the setup_hook()
+    async def setup_hook(self):
         for filename in os.listdir("extensions"):
             if filename.endswith(".py"):
                 await self.load_extension(f"extensions.{filename[:-3]}")
@@ -16,7 +16,7 @@ class Bot_Client(commands.Bot):
 #### #### #### ####
 
 
-def load_config(): # Load (or create) the config file which will let the bot run.
+def load_config():
     if not os.path.exists('config.json'):  # If there is no config file
         with open(r"config.json", 'w', encoding='utf8') as config_file:  # Create one
             bot_config = {
@@ -36,7 +36,11 @@ def run_bot():
     bot_config = load_config()
     bot_client = Bot_Client(
         command_prefix=bot_config["command_prefix"],
-        intents=discord.Intents.all()
+        intents=discord.Intents.all(),
+        activity=discord.Activity(
+            type=discord.ActivityType.watching,
+            name="for dissidence"
+        )
     )
 
     @bot_client.event
@@ -61,9 +65,9 @@ def run_bot():
                       re.IGNORECASE).match(message.content):
             await message.channel.send(f'An amusing attempt to hurt my algorithmic feelings, meatbag.')
 
-        await bot_client.process_commands(message) # after conversations, pass the message to the command handler (dont think i need this ngl)
+        await bot_client.process_commands(message) # after conversations, pass the message to the command handler
 
-    @bot_client.event # Just to let us know we started!
+    @bot_client.event
     async def on_ready(): print(f'System {bot_client.user} initialized. Beginning guild observation.')
 
     bot_client.run(bot_config["auth_token"])  # Run the bot.
