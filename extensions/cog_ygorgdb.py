@@ -98,6 +98,8 @@ enum_linkArrow = [
 class Cog_YGORGDB(commands.Cog):
     """Resource cog handles commands involving writeups, links, and image resources """
 
+    bot_client = None
+    api_client = None
     ygorgdb_cache = { # Default cache file template
         "X-Cache-Revision": 0,
         "cache_qna": {},
@@ -132,7 +134,11 @@ class Cog_YGORGDB(commands.Cog):
         with open(r'resources/ygorgdb_cache.json', 'w', encoding='utf8') as cache_file:
             json.dump(self.ygorgdb_cache, cache_file, sort_keys=True, indent=4)
 
+    async def cog_load(self) -> None:
+        self.api_client = aiohttp.ClientSession()
+
     async def cog_unload(self) -> None:
+        await self.api_client.close()
         # Unload the context menus
         for context_menu_command in self.list_of_context_menu_commands_to_add: self.bot_client.tree.remove_command(
             context_menu_command.name, type=context_menu_command.type
@@ -145,9 +151,9 @@ class Cog_YGORGDB(commands.Cog):
     @app_commands.command(name="card_display")
     @app_commands.describe(card_id='Card ID to query and display')
     async def display_card_by_id(self, interaction: discord.Interaction, card_id: str):
-        interaction.response.defer(thinking=False) # Getting the card data will probably take >3s
-        data_of_card_to_display = await get_card_data(card_id, self.ygorgdb_cache)
-        embed_of_card_to_be_sent = await build_card_embed(data_of_card_to_display)
+        await interaction.response.defer(thinking=False) # Getting the card data will probably take >3s
+        data_of_card_to_display = await get_card_data(self.api_client, card_id, self.ygorgdb_cache)
+        embed_of_card_to_be_sent = await build_card_embed(self.api_client, data_of_card_to_display)
         await interaction.followup.send(embed=embed_of_card_to_be_sent)
 
     #### #### App Commands #### #### Make sure to add these to the constructor!
@@ -171,13 +177,20 @@ class Cog_YGORGDB(commands.Cog):
             list_of_embeds_for_QAs_in_message.append(embed_for_this_QA)
 
             # Get the required data, loading from the cache if possible, saving to the cache if not.
-            data_for_this_QA = await get_qa_data(QA_IDs_found_in_message, self.ygorgdb_cache)
+            data_for_this_QA = await get_qa_data(
+                self.api_client,
+                QA_IDs_found_in_message,
+                self.ygorgdb_cache
+            )
             list_of_card_IDs_in_all_QAs = [
-                await get_card_data(str(card_id), self.ygorgdb_cache) for card_id in data_for_this_QA['cards']
+                await get_card_data(
+                    self.api_client,
+                    str(card_id),
+                    self.ygorgdb_cache
+                ) for card_id in data_for_this_QA['cards']
             ]
 
             # Use english if possible, otherwise use japanese.
-            # TODO change display language by user's locale.
             locale = 'en'
             if 'en' not in data_for_this_QA['qaData']: locale = 'ja'
             localized_QA_data = data_for_this_QA['qaData'][locale]
@@ -228,7 +241,11 @@ class Cog_YGORGDB(commands.Cog):
         # Send all the embeds, and let people select the cards from a dropdown!
         await interaction.followup.send(
             embeds=list_of_embeds_for_QAs_in_message, # this is all the QAs
-            view=selectview_qa_dropdown(list_of_card_IDs_in_all_QAs, self.ygorgdb_cache) # This is the dropdown
+            view=selectview_qa_dropdown(
+                self.api_client,
+                list_of_card_IDs_in_all_QAs,
+                self.ygorgdb_cache
+            )
         )
 
 
@@ -236,75 +253,72 @@ class Cog_YGORGDB(commands.Cog):
 
 
 # TODO combine get_card_data() and get_qa_data()
-async def get_card_data(card_id, db_cache):
+async def get_card_data(api_client: aiohttp.ClientSession, card_id, db_cache):
 
     # If the card id is not in the cache, add it to the cache.
     if card_id not in list(db_cache['cache_card'].keys()):
 
         # First open the api post request and get the information.
-        async with aiohttp.ClientSession() as client_session:
-            async with client_session.get(
-                    url=r"https://db.ygorganization.com/data/card/" + card_id) as request_response:
-                if request_response.status != 200:
-                    print(f"Card retrieval failed: <{request_response.status}>\n{request_response.url}")
-                    return
+        async with api_client.get(
+                url=r"https://db.ygorganization.com/data/card/" + card_id) as request_response:
+            if request_response.status != 200:
+                print(f"Card retrieval failed: <{request_response.status}>\n{request_response.url}")
+                return
 
-                # Check the revision header
-                received_x_cache_revision = int(request_response.headers.get("X-Cache-Revision"))
-                if received_x_cache_revision > db_cache["X-Cache-Revision"]:
-                    await manifest_revision(received_x_cache_revision, db_cache)
+            # Check the revision header
+            received_x_cache_revision = int(request_response.headers.get("X-Cache-Revision"))
+            if received_x_cache_revision > db_cache["X-Cache-Revision"]:
+                await manifest_revision(api_client, received_x_cache_revision, db_cache)
 
-                # If the request was successful, save the response json to the cache as an entry.
-                db_cache['cache_card'][card_id] = await request_response.json()
+            # If the request was successful, save the response json to the cache as an entry.
+            db_cache['cache_card'][card_id] = await request_response.json()
 
     # After updating the cache, we can return the Q&A from the cache.
     return db_cache['cache_card'][card_id]
 
 
-async def get_qa_data(qa_id, db_cache):
+async def get_qa_data(api_client: aiohttp.ClientSession, qa_id, db_cache):
     # If the qna id is not in the cache, add it to the cache.
     if qa_id not in list(db_cache['cache_qna'].keys()):
 
         # First open the api post request and get the information.
-        async with aiohttp.ClientSession() as client_session:
-            async with client_session.get(
-                    url=r"https://db.ygorganization.com/data/qa/" + qa_id) as request_response:
-                if request_response.status != 200:
-                    print(f"Q&A retrieval failed: <{request_response.status}>\n{request_response.url}")
-                    return
+        async with api_client.get(
+                url=r"https://db.ygorganization.com/data/qa/" + qa_id) as request_response:
+            if request_response.status != 200:
+                print(f"Q&A retrieval failed: <{request_response.status}>\n{request_response.url}")
+                return
 
-                # Check the revision header
-                received_x_cache_revision = int(request_response.headers.get("X-Cache-Revision"))
-                if received_x_cache_revision > db_cache["X-Cache-Revision"]:
-                    await manifest_revision(received_x_cache_revision, db_cache)
+            # Check the revision header
+            received_x_cache_revision = int(request_response.headers.get("X-Cache-Revision"))
+            if received_x_cache_revision > db_cache["X-Cache-Revision"]:
+                await manifest_revision(api_client, received_x_cache_revision, db_cache)
 
-                # If the request was successful, save the response json to the cache as an entry.
-                db_cache['cache_qna'][qa_id] = await request_response.json()
+            # If the request was successful, save the response json to the cache as an entry.
+            db_cache['cache_qna'][qa_id] = await request_response.json()
 
     # After updating the cache, we can return the Q&A from the cache.
     return db_cache['cache_qna'][qa_id]
 
 
-async def get_card_image_url(card_id):
-    async with aiohttp.ClientSession() as client_session:
+async def get_card_image_url(api_client: aiohttp.ClientSession, card_id):
 
-        # Get the manifest file from which we will extract the url of the image we need.
-        async with client_session.get(
-                url=r'https://artworks.ygorganization.com/manifest.json') as request_response:
-            if request_response.status != 200:
-                print(f"Card artwork manifest retrieval failed: <{request_response.status}>\n{request_response.url}")
-                return
+    # Get the manifest file from which we will extract the url of the image we need.
+    async with api_client.get(
+            url=r'https://artworks.ygorganization.com/manifest.json') as request_response:
+        if request_response.status != 200:
+            print(f"Card artwork manifest retrieval failed: <{request_response.status}>\n{request_response.url}")
+            return
 
-            # Pull out the json and select the bestArt of the card with the id we need.
-            card_artwork_manifest = await request_response.json()
-            target_card_image_url = card_artwork_manifest['cards'][card_id]['1']['bestArt']
-            if r'https:' not in target_card_image_url:
-                target_card_image_url = f"https:{target_card_image_url}"
-            print(target_card_image_url) # Debug
-            return target_card_image_url
+        # Pull out the json and select the bestArt of the card with the id we need.
+        card_artwork_manifest = await request_response.json()
+        target_card_image_url = card_artwork_manifest['cards'][card_id]['1']['bestArt']
+        if r'https:' not in target_card_image_url:
+            target_card_image_url = f"https:{target_card_image_url}"
+        print(target_card_image_url) # Debug
+        return target_card_image_url
 
 
-async def build_card_embed(card_data):
+async def build_card_embed(api_client: aiohttp.ClientSession, card_data):
     localized_card_data = card_data["cardData"]["en" if "en" in card_data['cardData'] else "ja"]
 
     # Build the embed
@@ -315,7 +329,7 @@ async def build_card_embed(card_data):
     )
 
     # Add the image via the ygorg artwork db url
-    thumbnail_url = await get_card_image_url(str(localized_card_data['id']))
+    thumbnail_url = await get_card_image_url(api_client, str(localized_card_data['id']))
     card_embed.set_thumbnail(url=thumbnail_url)
 
     # Parse the properties for Spells and Traps, i.e. Continuous, Quick-Play, etc.
@@ -376,14 +390,12 @@ async def build_card_embed(card_data):
     return card_embed
 
 
-async def manifest_revision(latest_x_cache_revision, db_cache):
+async def manifest_revision(api_client: aiohttp.ClientSession, latest_x_cache_revision, db_cache):
 
-    # Get the json object of the changes.
-    async with aiohttp.ClientSession() as client_session:
-        async with client_session.get(
-                url=r"https://db.ygorganization.com/manifest/" + str(db_cache['X-Cache-Revision'])
-        ) as request_response:
-            cache_changes = await request_response.json()
+    async with api_client.get(
+            url=r"https://db.ygorganization.com/manifest/" + str(db_cache['X-Cache-Revision'])
+    ) as request_response:
+        cache_changes = await request_response.json()
 
     print(f"Cache Changes:\n{cache_changes}")
 
@@ -408,14 +420,16 @@ async def manifest_revision(latest_x_cache_revision, db_cache):
 
 
 class selectview_qa_dropdown(discord.ui.View):
-    def __init__(self, card_list, db_cache, *, timeout=180):
+    def __init__(self, api_client: aiohttp.ClientSession, card_list, db_cache, *, timeout=180):
         super().__init__(timeout=timeout)
-        self.add_item(select_qa_dropdown(card_list, db_cache))
+        self.api_client = api_client
+        self.add_item(select_qa_dropdown(api_client, card_list, db_cache))
 
 
 class select_qa_dropdown(discord.ui.Select):  # View class to display the card in a Q&A
-    def __init__(self, card_list: [], db_cache, locale='en'):
+    def __init__(self, api_client: aiohttp.ClientSession, card_list: [], db_cache, locale='en'):
         self.ygorgdb_cache = db_cache
+        self.api_client = api_client
         card_options = [discord.SelectOption(
             label=card['cardData'][locale if locale in card['cardData'] else 'ja']['name'],
             value=card['cardData'][locale if locale in card['cardData'] else 'ja']['id']
@@ -428,14 +442,36 @@ class select_qa_dropdown(discord.ui.Select):  # View class to display the card i
 
     async def callback(self, interaction: discord.Interaction):
         await interaction.response.defer(thinking=False) # This could take longer than 3s.
-        await interaction.followup.send(
-            embed=await build_card_embed(await get_card_data(self.values[0], self.ygorgdb_cache))
-        )
-        # TODO redraw the dropdown to remove the monster queried.
+        selected_dropdown_card_data = await get_card_data(self.api_client, self.values[0], self.ygorgdb_cache)
+        selected_dropdown_card_embed = await build_card_embed(self.api_client, selected_dropdown_card_data)
+        await interaction.followup.send(embed=selected_dropdown_card_embed)
         await interaction.edit_original_response(view=self.view) # Redraws the dropdown to deselect the monster.
 
+#### #### #### ####
+
+
+async def api_request(api_client: aiohttp.ClientSession, method: str, api_url: str, params=None) -> dict:
+    if params is None: params = {}
+
+    if method == "GET":
+        request_response = await api_client.get(api_url, params=params)
+    elif method == "POST":
+        request_response = await api_client.post(api_url, params=params)
+    elif method == "DELETE":
+        request_response = await api_client.delete(api_url, params=params)
+    else:
+        raise Exception('Invalid method. GET, POST, or DELETE are allowed.')
+
+    if request_response.status != 200:
+        print(f'Error: API call returned status <{request_response.status}>')
+
+    request_response_return = await request_response.json()
+    request_response.close()
+
+    return request_response_return
 
 #### #### #### ####
+
 
 async def setup(bot_client: commands.Bot) -> None:
     await bot_client.add_cog(Cog_YGORGDB(bot_client))
