@@ -1,19 +1,34 @@
-import json
+#### #### Imports #### ####
+
+import json, pathlib
+from main import DuelComputer_Client
 import discord
 from discord.ext import commands
 from discord import app_commands
 
 
+#### #### Class #### ####
+
 class Cog_Resource(commands.Cog):
     """Resource cog handles commands involving writeups, links, and image resources """
 
-    ygo_resource_list = {}
+    #### #### Attributes #### ####
+
+    ygo_resource_list: dict
+    ygo_resource_list_path = pathlib.Path(__file__).parent.parent / 'resources//ygo_resource_list.json'
+    ygo_resource_images = pathlib.Path(__file__).parent.parent / 'resources//images'
+
+    #### #### Structors #### ####
 
     def __init__(self, bot_client: commands.Bot) -> None:
         self.bot_client = bot_client
 
-        with open(r"resources\ygo_resource_list.json", encoding='utf8') as json_file:
+        with open(self.ygo_resource_list_path, encoding='utf8') as json_file:
             self.ygo_resource_list = json.load(json_file)
+
+        return
+
+    #### #### Slash Commands #### ####
 
     async def slash_resource_autocomplete(
             self, interaction: discord.Interaction, current: str,) -> list[app_commands.Choice]:
@@ -46,5 +61,9 @@ class Cog_Resource(commands.Cog):
                 await interaction.response.send_message(file=discord.File(image_resource))
 
 
-async def setup(bot_client: commands.Bot) -> None:
+#### #### Setup #### ####
+
+async def setup(bot_client: DuelComputer_Client) -> None:
     await bot_client.add_cog(Cog_Resource(bot_client))
+
+#### #### End of File #### ####
