@@ -60,6 +60,18 @@
     "content": "resources\\images\\fast_effect_timing_chart.png",
     "help": "Chart which shows the flow of the game state."
   },
+  "Educated Guess": {
+    "alias": "doomer",
+    "type": "image",
+    "content": "resources\\images\\educated_guess.png",
+    "help": "What is the purpose of the rulings channels?"
+  },
+  "Negate Him": {
+    "alias": "negated",
+    "type": "image",
+    "content": "resources\\images\\negate_him.png",
+    "help": "what"
+  },
 
   "Sources of Credibility": {
     "alias": "cred",
