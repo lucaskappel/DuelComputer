@@ -32,7 +32,7 @@
   "TCG Forbidden/Limited List": {
     "alias": "fll",
     "type": "link",
-    "content": "https://www.yugioh-card.com/uk/limited/",
+    "content": "https://www.yugioh-card.com/en/limited/",
     "help": "The current TCG Forbidden/Limited List."
   },
   "Battle Phase Table": {
