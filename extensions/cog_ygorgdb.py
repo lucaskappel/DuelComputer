@@ -171,7 +171,7 @@ class Cog_YGORGDB(commands.Cog):
         await interaction.response.defer(thinking=False) # This could take longer than 3s.
 
         # Get the QA IDs via regex
-        id_of_qa_posts_in_message = re.search(r'db.ygorganization.com/qa#(\d*)', message.content)
+        id_of_qa_posts_in_message = re.search(r'db.ygoresources.com/qa#(\d*)', message.content)
         if id_of_qa_posts_in_message is None:
             await interaction.followup.send('Could not locate the Q&A id(s).')
             return
@@ -253,7 +253,7 @@ class Cog_YGORGDB(commands.Cog):
 
             # First open the api post request and get the information.
             async with self.bot_client.api_client.get(
-                url=r'https://db.ygorganization.com/data/card/' + card_id
+                url=r'https://db.ygoresources.com/data/card/' + card_id
             ) as request_response:
                 if request_response.status != 200:
                     raise Exception(f'Card retrieval failed: <{request_response.status}>\n{request_response.url}')
@@ -275,7 +275,7 @@ class Cog_YGORGDB(commands.Cog):
 
             # First open the api post request and get the information.
             async with self.bot_client.api_client.get(
-                    url=r'https://db.ygorganization.com/data/qa/' + qa_id) as request_response:
+                    url=r'https://db.ygoresources.com/data/qa/' + qa_id) as request_response:
                 if request_response.status != 200:
                     raise Exception(f'Q&A retrieval failed: <{request_response.status}>\n{request_response.url}')
 
@@ -294,7 +294,7 @@ class Cog_YGORGDB(commands.Cog):
 
         # Get the manifest file from which we will extract the url of the image we need.
         card_artwork_manifest = await self.bot_client.api_request(
-            url=r'https://artworks.ygorganization.com/manifest.json',
+            url=r'https://artworks.ygoresources.com/manifest.json',
             method='GET'
         )
 
@@ -311,7 +311,7 @@ class Cog_YGORGDB(commands.Cog):
         # Build the embed
         card_embed = discord.Embed(
             title=localized_card_data['name'],
-            url=r'https://db.ygorganization.com/card#' + str(localized_card_data['id']),
+            url=r'https://db.ygoresources.com/card#' + str(localized_card_data['id']),
             description=''
         )
 
@@ -381,7 +381,7 @@ class Cog_YGORGDB(commands.Cog):
     async def manifest_revision(self, latest_x_cache_revision) -> None:
 
         cache_changes = await self.bot_client.api_request(
-            url=r'https://db.ygorganization.com/manifest/' + str(self.ygorgdb_cache['X-Cache-Revision']),
+            url=r'https://db.ygoresources.com/manifest/' + str(self.ygorgdb_cache['X-Cache-Revision']),
             method='GET'
         )
 
